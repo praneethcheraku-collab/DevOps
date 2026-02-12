@@ -1,6 +1,13 @@
 pipeline {
     agent any
     
+    triggers {
+        cron('H/15 * * * *')  // Run every 15 minutes
+        // OR
+        // cron('0 0 * * *')  // Run daily at midnight
+        // cron('0 9 * * 1')  // Run every Monday at 9 AM
+    }
+    
     tools {
         nodejs 'NodeJS-18'
     }
