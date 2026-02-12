@@ -1,0 +1,13 @@
+{
+  "name": "jenkins-demo-app",
+  "version": "1.0.0",
+  "description": "Demo app for Jenkins Pipeline on Windows 11",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo Running tests... && exit 0",
+    "build": "echo Building application... && exit 0"
+  },
+  "author": "Praneeth",
+  "license": "ISC"
+}
