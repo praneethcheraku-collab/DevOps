@@ -7,7 +7,11 @@ pipeline {
         // cron('0 0 * * *')  // Run daily at midnight
         // cron('0 9 * * 1')  // Run every Monday at 9 AM
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> c1a1c9e0c245d949f232037e4fcadaac24039caa
     tools {
         nodejs 'NodeJS-18'
     }
