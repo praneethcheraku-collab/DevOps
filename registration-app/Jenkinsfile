@@ -1,0 +1,255 @@
+pipeline {
+    agent any
+    
+    tools {
+        nodejs 'NodeJS-16'
+    }
+    
+    triggers {
+        pollSCM('H/5 * * * *')  // Check for changes every 5 minutes
+        // OR use githubPush() for webhook trigger
+    }
+    
+    environment {
+        BACKEND_DIR = 'backend'
+        FRONTEND_DIR = 'frontend'
+        NPM_CONFIG_CACHE = "${WORKSPACE}/.npm"
+    }
+    
+    options {
+        // Keep only last 10 builds
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        // Timeout after 30 minutes
+        timeout(time: 30, unit: 'MINUTES')
+        // Add timestamps to console output
+        timestamps()
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '📥 Checking out code from repository...'
+                checkout scm
+            }
+        }
+        
+        stage('Environment Info') {
+            steps {
+                echo '🔧 Environment Information'
+                bat '''
+                    echo Node.js version:
+                    node --version
+                    echo NPM version:
+                    npm --version
+                    echo Current directory:
+                    cd
+                    echo Workspace:
+                    dir
+                '''
+            }
+        }
+        
+        stage('Clean Install - Backend') {
+            steps {
+                echo '🧹 Cleaning and installing backend dependencies...'
+                dir("${BACKEND_DIR}") {
+                    bat '''
+                        if exist node_modules rmdir /s /q node_modules
+                        if exist package-lock.json del package-lock.json
+                        npm install --loglevel=error
+                    '''
+                }
+            }
+        }
+        
+        stage('Clean Install - Frontend') {
+            steps {
+                echo '🧹 Cleaning and installing frontend dependencies...'
+                dir("${FRONTEND_DIR}") {
+                    bat '''
+                        if exist node_modules rmdir /s /q node_modules
+                        if exist package-lock.json del package-lock.json
+                        npm install --loglevel=error
+                    '''
+                }
+            }
+        }
+        
+        stage('Verify Dependencies') {
+            steps {
+                echo '✅ Verifying installed dependencies...'
+                dir("${BACKEND_DIR}") {
+                    bat 'npm list --depth=0 || exit 0'
+                }
+                dir("${FRONTEND_DIR}") {
+                    bat 'npm list --depth=0 || exit 0'
+                }
+            }
+        }
+        
+        stage('Security Audit') {
+            steps {
+                echo '🔒 Running security audit...'
+                script {
+                    try {
+                        dir("${BACKEND_DIR}") {
+                            bat 'npm audit --audit-level=moderate || exit 0'
+                        }
+                        dir("${FRONTEND_DIR}") {
+                            bat 'npm audit --audit-level=moderate || exit 0'
+                        }
+                    } catch (Exception e) {
+                        echo "⚠️ Security audit found issues (non-blocking)"
+                    }
+                }
+            }
+        }
+        
+        stage('Test Backend') {
+            steps {
+                echo '🧪 Running backend tests...'
+                dir("${BACKEND_DIR}") {
+                    bat 'npm test'
+                }
+            }
+        }
+        
+        stage('Test Frontend') {
+            steps {
+                echo '🧪 Running frontend tests...'
+                dir("${FRONTEND_DIR}") {
+                    bat 'npm test'
+                }
+            }
+        }
+        
+        stage('Build Frontend') {
+            steps {
+                echo '🔨 Building frontend for production...'
+                dir("${FRONTEND_DIR}") {
+                    bat '''
+                        set CI=false
+                        npm run build
+                    '''
+                }
+            }
+        }
+        
+        stage('Archive Artifacts') {
+            steps {
+                echo '📦 Archiving build artifacts...'
+                
+                // Archive frontend build
+                dir("${FRONTEND_DIR}") {
+                    archiveArtifacts artifacts: 'build/**/*', 
+                                     fingerprint: true,
+                                     allowEmptyArchive: false
+                }
+                
+                // Archive Excel file if exists
+                script {
+                    def excelFile = "${BACKEND_DIR}/registrations.xlsx"
+                    if (fileExists(excelFile)) {
+                        echo '📊 Archiving registrations Excel file...'
+                        archiveArtifacts artifacts: "${BACKEND_DIR}/registrations.xlsx",
+                                         fingerprint: true,
+                                         allowEmptyArchive: true
+                    } else {
+                        echo 'ℹ️ No registrations file found yet'
+                    }
+                }
+                
+                // Archive package files for reference
+                archiveArtifacts artifacts: '**/package.json',
+                                 fingerprint: true,
+                                 allowEmptyArchive: true
+            }
+        }
+        
+        stage('Check for New Registrations') {
+            steps {
+                echo '📊 Registration Statistics'
+                script {
+                    def excelFile = "${BACKEND_DIR}/registrations.xlsx"
+                    if (fileExists(excelFile)) {
+                        bat """
+                            echo Excel file size:
+                            dir "${excelFile}" | find "registrations"
+                        """
+                    } else {
+                        echo 'No registrations yet - Excel file will be created on first registration'
+                    }
+                }
+            }
+        }
+        
+        stage('Deployment Ready') {
+            steps {
+                echo '🚀 Application Deployment Information'
+                echo '=' * 50
+                echo 'Backend Server: http://localhost:5000'
+                echo 'Frontend App: http://localhost:3000'
+                echo 'Excel Storage: backend/registrations.xlsx'
+                echo '=' * 50
+                echo '✅ All dependencies installed automatically!'
+                echo '✅ Tests passed!'
+                echo '✅ Build completed successfully!'
+                echo '=' * 50
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+            echo '📦 Dependencies installed: Backend + Frontend'
+            echo '🧪 All tests passed'
+            echo '🔨 Production build created'
+            echo '📊 Artifacts archived'
+            
+            // Optional: Send success notification
+            // emailext subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            //          body: """
+            //              Pipeline completed successfully!
+            //              
+            //              Job: ${env.JOB_NAME}
+            //              Build: ${env.BUILD_NUMBER}
+            //              Duration: ${currentBuild.durationString}
+            //              
+            //              Dependencies installed automatically.
+            //              All tests passed.
+            //          """,
+            //          to: 'your-email@example.com'
+        }
+        
+        failure {
+            echo '❌ Pipeline failed!'
+            echo 'Check the console output above for error details'
+            
+            // Optional: Send failure notification
+            // emailext subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            //          body: """
+            //              Pipeline failed!
+            //              
+            //              Job: ${env.JOB_NAME}
+            //              Build: ${env.BUILD_NUMBER}
+            //              
+            //              Check Jenkins console: ${env.BUILD_URL}console
+            //          """,
+            //          to: 'your-email@example.com'
+        }
+        
+        unstable {
+            echo '⚠️ Pipeline unstable - check warnings'
+        }
+        
+        always {
+            echo '🧹 Cleaning up...'
+            echo "Build finished at: ${new Date()}"
+            echo "Total duration: ${currentBuild.durationString}"
+            
+            // Clean workspace (optional - uncomment if needed)
+            cleanWs()
+        }
+    }
+}
