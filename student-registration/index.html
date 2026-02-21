@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Registration</title>
+</head>
+<body>
+    <h2>Student Registration Form</h2>
+    
+    <form id="form">
+        <label>Name:</label><br>
+        <input type="text" id="name" required><br><br>
+        
+        <label>Email:</label><br>
+        <input type="email" id="email" required><br><br>
+        
+        <label>Age:</label><br>
+        <input type="number" id="age" required><br><br>
+        
+        <label>Course:</label><br>
+        <select id="course" required>
+            <option value="">Select</option>
+            <option value="CS">Computer Science</option>
+            <option value="DS">Data Science</option>
+            <option value="WD">Web Development</option>
+        </select><br><br>
+        
+        <button type="submit">Register</button>
+    </form>
+    
+    <p id="msg"></p>
+    
+    <script>
+        document.getElementById('form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                age: document.getElementById('age').value,
+                course: document.getElementById('course').value
+            };
+            
+            const res = await fetch('/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            const result = await res.json();
+            document.getElementById('msg').textContent = result.message;
+            if (result.success) document.getElementById('form').reset();
+        };
+    </script>
+</body>
+</html>

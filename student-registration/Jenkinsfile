@@ -1,0 +1,33 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'Node 20'   // ← name you configured in Jenkins Tools
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install') {
+            steps {
+                bat 'npm ci'   // bat because you're on Windows
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'npm test'
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
