@@ -1,28 +1,63 @@
 pipeline {
     agent any
-
     
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+                echo 'Code checked out successfully'
             }
         }
-
-        stage('Install') {
+        
+        stage('Install Dependencies') {
             steps {
-                bat 'npm ci'   // bat because you're on Windows
+                dir('student-registration') {
+                    echo 'Installing npm packages...'
+                    bat 'npm install'
+                }
             }
         }
-
-        stage('Test') {
+        
+        stage('Run Tests') {
             steps {
-                bat 'npm test'
+                dir('student-registration') {
+                    echo 'Running automated tests...'
+                    bat 'npm test'
+                }
+            }
+        }
+        
+        stage('Build Package') {
+            steps {
+                dir('student-registration') {
+                    echo 'Creating deployment package...'
+                    bat '''
+                        mkdir build
+                        copy server.js build\\
+                        copy index.html build\\
+                        copy package.json build\\
+                        tar -czf student-registration-%BUILD_NUMBER%.tar.gz build
+                    '''
+                }
+            }
+        }
+        
+        stage('Archive Artifacts') {
+            steps {
+                dir('student-registration') {
+                    archiveArtifacts artifacts: '*.tar.gz', fingerprint: true
+                }
             }
         }
     }
-
+    
     post {
+        success {
+            echo '✓ Build completed successfully!'
+        }
+        failure {
+            echo '✗ Build failed - check console output'
+        }
         always {
             cleanWs()
         }
