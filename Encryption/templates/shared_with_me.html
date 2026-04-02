@@ -1,0 +1,185 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block hero %}
+<div class="shared-files-container" style="margin-top: 100px;">
+    <div class="shared-files-header">
+        <div class="header-content">
+            <h1>Files Shared With Me</h1>
+            <p>Files that other users have shared with you</p>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="files-section">
+        {% if accessible_files %}
+        <div class="files-grid">
+            {% for file in accessible_files %}
+            <div class="file-card">
+                <div class="file-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="file-details">
+                    <h4>{{ file.original_name }}</h4>
+                    <p class="file-size">{{ file.get_file_size_display }}</p>
+                    <p class="file-owner">Shared by: {{ file.user.username }}</p>
+                    <p class="file-date">Uploaded: {{ file.uploaded_at|date:"M d, Y" }}</p>
+                </div>
+                <div class="file-actions">
+                    <a href="{% url 'file_detail_other' file.id %}" class="btn btn-primary btn-sm">
+                        View File
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2V8H20" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h3>No shared files</h3>
+            <p>No files have been shared with you yet.</p>
+            <a href="{% url 'explore_files' %}" class="btn btn-primary">Explore Files</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.shared-files-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.shared-files-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.header-content h1 {
+    color: #2D3748;
+    font-size: 32px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.header-content p {
+    color: #718096;
+    font-size: 16px;
+}
+
+.files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.file-card {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.file-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.file-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #E2E8F0;
+    color: #718096;
+    margin-bottom: 16px;
+}
+
+.file-details h4 {
+    margin: 0 0 8px 0;
+    color: #2D3748;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.file-size {
+    color: #718096;
+    margin: 0 0 4px 0;
+    font-size: 14px;
+}
+
+.file-owner {
+    color: #4A6CF7;
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.file-date {
+    color: #A0AEC0;
+    margin: 0 0 16px 0;
+    font-size: 12px;
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: #2D3748;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.empty-state p {
+    color: #718096;
+    margin-bottom: 20px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 768px) {
+    .shared-files-container {
+        padding: 20px;
+    }
+    
+    .files-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

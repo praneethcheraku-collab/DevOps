@@ -9,8 +9,8 @@ test('Health check should return OK', async () => {
 
 test('Should register student with valid data', async () => {
     const student = {
-        name: 'John Doe',
-        email: 'john@test.com',
+        name: 'James',
+        email: 'james@test.com',
         age: 22,
         course: 'CS'
     };
@@ -21,7 +21,7 @@ test('Should register student with valid data', async () => {
 });
 
 test('Should reject incomplete data', async () => {
-    const incomplete = { name: 'Jane' };
+    const incomplete = { name: 'chp' };
     const res = await request(app).post('/register').send(incomplete);
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);

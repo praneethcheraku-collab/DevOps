@@ -5,15 +5,19 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "jest"
+    
+    "test": "jest --testPathPattern=selenium.test.js --testTimeout=30000"
   },
   "dependencies": {
     "express": "^4.19.2"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "supertest": "^7.0.0"
+    "supertest": "^7.0.0",
+    "selenium-webdriver": "^4.21.0",
+    "chromedriver": "^145.0.0"
   },
+   
   "engines": {
     "node": ">=18.0.0"
   },

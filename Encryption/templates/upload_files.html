@@ -1,0 +1,815 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block hero %}
+<div class="upload-container" style="margin-top: 100px;">
+    <div class="upload-header">
+        <h2>Upload Files</h2>
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <p>Add new files to your workspace</p>
+    </div>
+
+    <!-- Upload Form -->
+    <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_file' %}">
+        {% csrf_token %}
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#4A6CF7" fill-opacity="0.1"/>
+                    <path d="M14 2V8H20M14 2L20 8M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#4A6CF7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 13H8" stroke="#4A6CF7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 17H8" stroke="#4A6CF7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10 9H9H8" stroke="#4A6CF7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h3>Drag & Drop Files Here</h3>
+            <p>or</p>
+            <label for="fileInput" class="browse-btn">Browse Files</label>
+            <input type="file" name="files" id="fileInput" multiple style="display: none;">
+            <p class="file-types">Supported: PDF, DOC, XLS, PPT, JPG, PNG, ZIP (Max 10MB per file)</p>
+        </div>
+
+        <!-- Selected Files Preview -->
+        <div class="selected-files" id="selectedFiles" style="display: none;">
+            <h4>Selected Files:</h4>
+            <div class="files-preview" id="filesPreview"></div>
+        </div>
+
+        <!-- Upload Button -->
+        <div class="upload-actions">
+            <button type="submit" class="upload-submit-btn" id="uploadSubmit" disabled>
+                <span class="btn-text">Upload Files</span>
+                <span class="btn-loading" style="display: none;">
+                    <svg class="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M12 18V22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4.93 4.93L7.76 7.76" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M16.24 16.24L19.07 19.07" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M2 12H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M18 12H22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4.93 19.07L7.76 16.24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M16.24 7.76L19.07 4.93" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Uploading...
+                </span>
+            </button>
+        </div>
+    </form>
+    
+    <!-- Upload Progress -->
+    <div class="upload-progress" id="uploadProgress" style="display: none;">
+        <h4>Uploading Files...</h4>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-text" id="progressText">0%</p>
+    </div>
+    
+    <!-- Recent Uploads -->
+    <div class="recent-uploads">
+        <h3>Recent Uploads</h3>
+        <div class="file-list" id="fileList">
+            {% if recent_uploads %}
+                {% for file in recent_uploads %}
+                <div class="file-item" data-file-id="{{ file.id }}">
+                    <div class="file-icon {{ file.file_type }}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 9H9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">{{ file.original_name }}</div>
+                        <div class="file-details">
+                            <span class="file-size">{{ file.get_file_size_display }}</span>
+                            <span class="file-date">{{ file.uploaded_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <a href="#" class="action-btn download-btn" title="Download">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </a>
+                        <form method="post" action="#" class="delete-form">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this file?')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No recent uploads</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.upload-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.upload-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.upload-header h2 {
+    color: #2D3748;
+    font-size: 28px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.upload-header p {
+    color: #718096;
+    font-size: 16px;
+}
+
+.messages {
+    margin-bottom: 20px;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.alert-success {
+    background: #DCFCE7;
+    color: #166534;
+    border: 1px solid #BBF7D0;
+}
+
+.alert-error {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
+}
+
+.upload-area {
+    border: 2px dashed #CBD5E0;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    transition: all 0.3s ease;
+    background-color: #F7FAFC;
+    cursor: pointer;
+}
+
+.upload-area.active {
+    border-color: #4A6CF7;
+    background-color: #EDF2FF;
+}
+
+.upload-icon {
+    margin-bottom: 16px;
+}
+
+.upload-area h3 {
+    color: #2D3748;
+    font-size: 20px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.upload-area p {
+    color: #718096;
+    margin-bottom: 16px;
+}
+
+.browse-btn {
+    display: inline-block;
+    background: #4A6CF7;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-bottom: 16px;
+}
+
+.browse-btn:hover {
+    background: #3A5BD9;
+}
+
+.file-types {
+    font-size: 14px;
+    color: #A0AEC0;
+}
+
+.selected-files {
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #F7FAFC;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+}
+
+.selected-files h4 {
+    color: #2D3748;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.files-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.file-preview-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #E2E8F0;
+}
+
+.file-preview-name {
+    font-size: 14px;
+    color: #2D3748;
+    flex-grow: 1;
+}
+
+.file-preview-size {
+    font-size: 12px;
+    color: #718096;
+    margin-right: 12px;
+}
+
+.file-preview-remove {
+    background: none;
+    border: none;
+    color: #DC2626;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.file-preview-remove:hover {
+    background: #FEE2E2;
+}
+
+.upload-actions {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.upload-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #4A6CF7;
+    color: white;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.upload-submit-btn:hover:not(:disabled) {
+    background: #3A5BD9;
+    transform: translateY(-1px);
+}
+
+.upload-submit-btn:disabled {
+    background: #CBD5E0;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.upload-submit-btn.loading {
+    background: #3A5BD9;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.upload-progress {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #F7FAFC;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+}
+
+.upload-progress h4 {
+    color: #2D3748;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #4A6CF7;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    color: #718096;
+    font-size: 14px;
+}
+
+.recent-uploads h3 {
+    color: #2D3748;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.file-list {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #E2E8F0;
+    transition: background 0.2s ease;
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-item:hover {
+    background: #F7FAFC;
+}
+
+.file-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.file-icon.pdf {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.file-icon.image {
+    background: #DCFCE7;
+    color: #16A34A;
+}
+
+.file-icon.document {
+    background: #E0F2FE;
+    color: #0284C7;
+}
+
+.file-icon.other {
+    background: #F3E8FF;
+    color: #9333EA;
+}
+
+.file-info {
+    flex-grow: 1;
+}
+
+.file-name {
+    font-weight: 500;
+    color: #2D3748;
+    margin-bottom: 4px;
+}
+
+.file-details {
+    display: flex;
+    font-size: 14px;
+    color: #718096;
+}
+
+.file-size {
+    margin-right: 16px;
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: #EDF2F7;
+    color: #4A6CF7;
+}
+
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: #A0AEC0;
+}
+
+.delete-form {
+    display: inline;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadSubmit = document.getElementById('uploadSubmit');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const filesPreview = document.getElementById('filesPreview');
+    const fileList = document.getElementById('fileList');
+    
+    let selectedFilesList = [];
+
+    // Handle drag and drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        uploadArea.classList.add('active');
+    }
+    
+    function unhighlight() {
+        uploadArea.classList.remove('active');
+    }
+    
+    // Handle dropped files
+    uploadArea.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+    
+    // Handle file input change
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+    
+    // Handle files selection
+    function handleFiles(files) {
+        if (files.length === 0) return;
+        
+        // Add files to selected files list
+        Array.from(files).forEach(file => {
+            // Check for duplicate files
+            if (!selectedFilesList.some(f => f.name === file.name && f.size === file.size)) {
+                selectedFilesList.push(file);
+            }
+        });
+        
+        updateFilesPreview();
+        updateUploadButton();
+    }
+    
+    // Update files preview
+    function updateFilesPreview() {
+        filesPreview.innerHTML = '';
+        
+        if (selectedFilesList.length === 0) {
+            selectedFiles.style.display = 'none';
+            return;
+        }
+        
+        selectedFiles.style.display = 'block';
+        
+        selectedFilesList.forEach((file, index) => {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            const fileType = getFileType(fileExtension);
+            const fileSize = formatFileSize(file.size);
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-preview-item';
+            fileItem.innerHTML = `
+                <div class="file-preview-name">${file.name}</div>
+                <div class="file-preview-size">${fileSize}</div>
+                <button type="button" class="file-preview-remove" data-index="${index}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            `;
+            
+            filesPreview.appendChild(fileItem);
+        });
+        
+        // Add event listeners for remove buttons
+        document.querySelectorAll('.file-preview-remove').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                selectedFilesList.splice(index, 1);
+                updateFilesPreview();
+                updateUploadButton();
+            });
+        });
+    }
+    
+    // Update upload button state
+    function updateUploadButton() {
+        uploadSubmit.disabled = selectedFilesList.length === 0;
+    }
+    
+    // Browse button click
+    uploadArea.querySelector('.browse-btn').addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    // Form submission
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (selectedFilesList.length === 0) {
+            alert('Please select at least one file to upload.');
+            return;
+        }
+        
+        uploadFiles();
+    });
+    
+    // Upload files to backend
+    function uploadFiles() {
+        const formData = new FormData();
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        
+        // Add files
+        selectedFilesList.forEach(file => {
+            formData.append('files', file);
+        });
+        
+        // Show loading state
+        uploadSubmit.disabled = true;
+        uploadSubmit.classList.add('loading');
+        uploadSubmit.querySelector('.btn-text').style.display = 'none';
+        uploadSubmit.querySelector('.btn-loading').style.display = 'flex';
+        
+        // Show progress bar
+        uploadProgress.style.display = 'block';
+        
+        // Simulate progress (in real implementation, use XMLHttpRequest with progress event)
+        simulateProgress();
+        
+        // Send files to backend
+        fetch('{% url "upload_file" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Success handling
+                showMessage('Files uploaded successfully!', 'success');
+                
+                // Add uploaded files to recent uploads
+                if (data.files && data.files.length > 0) {
+                    addFilesToList(data.files);
+                }
+                
+                // Reset form
+                resetUploadForm();
+            } else {
+                // Error handling
+                showMessage(data.error || 'Error uploading files.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('Error uploading files. Please try again.', 'error');
+        })
+        .finally(() => {
+            // Hide loading state
+            uploadSubmit.disabled = false;
+            uploadSubmit.classList.remove('loading');
+            uploadSubmit.querySelector('.btn-text').style.display = 'block';
+            uploadSubmit.querySelector('.btn-loading').style.display = 'none';
+            
+            // Hide progress bar
+            setTimeout(() => {
+                uploadProgress.style.display = 'none';
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+            }, 1000);
+        });
+    }
+    
+    // Simulate upload progress (replace with real progress tracking)
+    function simulateProgress() {
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 10;
+            if (progress >= 90) {
+                progress = 90;
+                clearInterval(interval);
+            }
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `${Math.round(progress)}%`;
+        }, 200);
+    }
+    
+    // Reset upload form
+    function resetUploadForm() {
+        selectedFilesList = [];
+        fileInput.value = '';
+        updateFilesPreview();
+        updateUploadButton();
+    }
+    
+    // Show message
+    function showMessage(message, type) {
+        // You can implement a toast notification system here
+        alert(`${type.toUpperCase()}: ${message}`);
+    }
+    
+    // Add files to recent uploads list
+    function addFilesToList(files) {
+        // Remove empty state if present
+        const emptyState = fileList.querySelector('.empty-state');
+        if (emptyState) {
+            fileList.removeChild(emptyState);
+        }
+        
+        // Add each file to the list
+        files.forEach(file => {
+            const fileItem = createFileItem(file);
+            fileList.insertBefore(fileItem, fileList.firstChild);
+        });
+    }
+    
+    // Create a file item element
+    function createFileItem(file) {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const fileType = getFileType(fileExtension);
+        
+        fileItem.innerHTML = `
+            <div class="file-icon ${fileType}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10 9H9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="file-info">
+                <div class="file-name">${file.name}</div>
+                <div class="file-details">
+                    <span class="file-size">${file.size}</span>
+                    <span class="file-date">Just now</span>
+                </div>
+            </div>
+            <div class="file-actions">
+                <a href="${file.url}" class="action-btn download-btn" title="Download">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </a>
+                <button class="action-btn delete-btn" title="Delete" onclick="deleteFile('${file.id}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        return fileItem;
+    }
+    
+    // Delete file function
+    function deleteFile(fileId) {
+        if (confirm('Are you sure you want to delete this file?')) {
+            // Implement delete functionality
+            console.log('Delete file:', fileId);
+        }
+    }
+    
+    // Determine file type based on extension
+    function getFileType(extension) {
+        const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'];
+        const documentTypes = ['doc', 'docx', 'txt', 'rtf', 'xls', 'xlsx', 'ppt', 'pptx'];
+        const pdfTypes = ['pdf'];
+        
+        if (imageTypes.includes(extension)) return 'image';
+        if (documentTypes.includes(extension)) return 'document';
+        if (pdfTypes.includes(extension)) return 'pdf';
+        return 'other';
+    }
+    
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+});
+</script>
+{% endblock %}
+
+{% block feature %} {% endblock %}
+{% block research %} {% endblock %}
+{% block publications %} {% endblock %}
+{% block footer %} {% endblock %}

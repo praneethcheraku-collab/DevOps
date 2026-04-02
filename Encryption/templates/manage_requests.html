@@ -1,0 +1,824 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block hero %}
+<div class="requests-container" style="margin-top: 100px;">
+    {% csrf_token %}
+    
+    <div class="requests-header">
+        <div class="header-content">
+            <h1>Manage File Requests</h1>
+            <p>Review and manage file access requests</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'explore_files' %}" class="btn btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Explore Files
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="requests-tabs">
+        <button class="tab-btn active" data-tab="incoming">Incoming Requests</button>
+        <button class="tab-btn" data-tab="outgoing">My Requests</button>
+    </div>
+
+    <div class="tab-content">
+        <!-- Incoming Requests Tab -->
+        <div class="tab-pane active" id="incoming">
+            <div class="requests-section">
+                <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Requests for Your Files
+                </h2>
+                
+                {% if incoming_requests %}
+                <div class="requests-list">
+                    {% for request in incoming_requests %}
+                    <div class="request-card" data-request-id="{{ request.id }}">
+                        <div class="request-header">
+                            <div class="requester-info">
+                                <div class="avatar">
+                                    {{ request.requester.username|first|upper }}
+                                </div>
+                                <div class="requester-details">
+                                    <h4>{{ request.requester.username }}</h4>
+                                    <p>Requested access to your file</p>
+                                </div>
+                            </div>
+                            <div class="request-date">
+                                {{ request.created_at|date:"M d, Y" }}
+                            </div>
+                        </div>
+                        
+                        <div class="request-body">
+                            <div class="file-info">
+                                <div class="file-icon small">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="file-details">
+                                    <h5>{{ request.file.original_name }}</h5>
+                                    <p>{{ request.file.get_file_size_display }}</p>
+                                </div>
+                            </div>
+                            
+                            {% if request.message %}
+                            <div class="request-message">
+                                <strong>Message:</strong>
+                                <p>"{{ request.message }}"</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="request-footer">
+                            <button class="btn btn-danger btn-sm reject-request" data-request-id="{{ request.id }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Reject
+                            </button>
+                            <button class="btn btn-success btn-sm approve-request" data-request-id="{{ request.id }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Approve
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>No incoming requests</h3>
+                    <p>You don't have any pending file access requests.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Outgoing Requests Tab -->
+        <div class="tab-pane" id="outgoing">
+            <div class="requests-section">
+                <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Requests You've Sent
+                </h2>
+                
+                {% if outgoing_requests %}
+                <div class="requests-list">
+                    {% for request in outgoing_requests %}
+                    <div class="request-card {% if request.status != 'pending' %}status-{{ request.status }}{% endif %}" data-request-id="{{ request.id }}">
+                        <div class="request-header">
+                            <div class="requester-info">
+                                <div class="avatar owner">
+                                    {{ request.file_owner.username|first|upper }}
+                                </div>
+                                <div class="requester-details">
+                                    <h4>Request to {{ request.file_owner.username }}</h4>
+                                    <p>For file: {{ request.file.original_name }}</p>
+                                </div>
+                            </div>
+                            <div class="request-status status-{{ request.status }}">
+                                {{ request.status|title }}
+                            </div>
+                        </div>
+                        
+                        <div class="request-body">
+                            <div class="file-info">
+                                <div class="file-icon small">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="file-details">
+                                    <h5>{{ request.file.original_name }}</h5>
+                                    <p>{{ request.file.get_file_size_display }} • {{ request.created_at|date:"M d, Y" }}</p>
+                                </div>
+                            </div>
+                            
+                            {% if request.message %}
+                            <div class="request-message">
+                                <strong>Your message:</strong>
+                                <p>"{{ request.message }}"</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="request-footer">
+                            {% if request.status == 'pending' %}
+                            <button class="btn btn-outline btn-sm cancel-outgoing-request" data-request-id="{{ request.id }}">
+                                Cancel Request
+                            </button>
+                            {% elif request.status == 'approved' %}
+                            <a href="{% url 'file_detail_other' request.file.id %}" class="btn btn-success btn-sm">
+                                View File
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 15V9M14 15V9M6 4H18C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V6C4 4.89543 4.89543 4 6 4Z" stroke="#CBD5E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>No outgoing requests</h3>
+                    <p>You haven't sent any file access requests yet.</p>
+                    <a href="{% url 'explore_files' %}" class="btn btn-primary">Explore Files</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.requests-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.requests-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.header-content h1 {
+    color: #2D3748;
+    font-size: 32px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.header-content p {
+    color: #718096;
+    font-size: 16px;
+}
+
+.messages {
+    margin-bottom: 20px;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.alert-success {
+    background: #DCFCE7;
+    color: #166534;
+    border: 1px solid #BBF7D0;
+}
+
+.alert-error {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
+}
+
+.requests-tabs {
+    display: flex;
+    border-bottom: 1px solid #E2E8F0;
+    margin-bottom: 30px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    font-weight: 500;
+    color: #718096;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+    color: #4A6CF7;
+}
+
+.tab-btn.active {
+    color: #4A6CF7;
+    border-bottom-color: #4A6CF7;
+}
+
+.tab-pane {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.requests-section {
+    margin-bottom: 30px;
+}
+
+.section-title {
+    color: #2D3748;
+    font-size: 20px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.request-card {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.request-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.request-card.status-approved {
+    border-color: #10B981;
+    background: #F0FDF4;
+}
+
+.request-card.status-rejected {
+    border-color: #EF4444;
+    background: #FEF2F2;
+}
+
+.request-card.status-cancelled {
+    border-color: #6B7280;
+    background: #F9FAFB;
+}
+
+.request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.requester-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #4A6CF7;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.avatar.owner {
+    background: #10B981;
+}
+
+.requester-details h4 {
+    margin: 0;
+    color: #2D3748;
+    font-weight: 500;
+}
+
+.requester-details p {
+    margin: 0;
+    color: #718096;
+    font-size: 14px;
+}
+
+.request-date {
+    color: #A0AEC0;
+    font-size: 14px;
+}
+
+.request-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-pending {
+    background: #FEF3C7;
+    color: #D97706;
+}
+
+.status-approved {
+    background: #DCFCE7;
+    color: #16A34A;
+}
+
+.status-rejected {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.status-cancelled {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+
+.request-body {
+    margin-bottom: 16px;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #F7FAFC;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.file-icon.small {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #E2E8F0;
+    color: #718096;
+}
+
+.file-details h5 {
+    margin: 0;
+    color: #2D3748;
+    font-weight: 500;
+}
+
+.file-details p {
+    margin: 0;
+    color: #718096;
+    font-size: 14px;
+}
+
+.request-message {
+    padding: 12px;
+    background: #F7FAFC;
+    border-radius: 8px;
+    border-left: 3px solid #4A6CF7;
+}
+
+.request-message strong {
+    color: #2D3748;
+    font-size: 14px;
+}
+
+.request-message p {
+    margin: 4px 0 0 0;
+    color: #718096;
+    font-style: italic;
+}
+
+.request-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: none;
+    font-size: 14px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.btn-success {
+    background: #10B981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-danger {
+    background: #EF4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #DC2626;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #718096;
+    border: 1px solid #E2E8F0;
+}
+
+.btn-outline:hover {
+    background: #F7FAFC;
+    color: #4A6CF7;
+}
+
+.btn-primary {
+    background: #4A6CF7;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #3A5BD9;
+}
+
+.btn-secondary {
+    background: #F7FAFC;
+    color: #4A6CF7;
+    border: 1px solid #E2E8F0;
+}
+
+.btn-secondary:hover {
+    background: #EDF2F7;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: #2D3748;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.empty-state p {
+    color: #718096;
+    margin-bottom: 20px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .requests-container {
+        padding: 20px;
+    }
+    
+    .requests-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .request-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .request-footer {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Tab functionality
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+            
+            // Update active tab button
+            tabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show target tab pane
+            tabPanes.forEach(pane => {
+                pane.classList.remove('active');
+                if (pane.id === targetTab) {
+                    pane.classList.add('active');
+                }
+            });
+        });
+    });
+    
+    // Handle incoming requests
+    document.querySelectorAll('.approve-request').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const requestId = this.dataset.requestId;
+            handleRequest(requestId, 'approve');
+        });
+    });
+    
+    document.querySelectorAll('.reject-request').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const requestId = this.dataset.requestId;
+            handleRequest(requestId, 'reject');
+        });
+    });
+    
+    // Handle outgoing requests cancellation
+    document.querySelectorAll('.cancel-outgoing-request').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const requestId = this.dataset.requestId;
+            cancelOutgoingRequest(requestId);
+        });
+    });
+    
+    function handleRequest(requestId, action) {
+        const actionText = action === 'approve' ? 'approve' : 'reject';
+        
+        if (!confirm(`Are you sure you want to ${actionText} this request?`)) {
+            return;
+        }
+        
+        const btn = document.querySelector(`.${action}-request[data-request-id="${requestId}"]`);
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = `
+            <svg class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 18V22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4.93 4.93L7.76 7.76" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M16.24 16.24L19.07 19.07" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M2 12H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M18 12H22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4.93 19.07L7.76 16.24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M16.24 7.76L19.07 4.93" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Processing...
+        `;
+        
+        fetch(`/request/${requestId}/${action}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken,
+            },
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                showToast(data.message, 'success');
+                // Remove the request card
+                const requestCard = document.querySelector(`.request-card[data-request-id="${requestId}"]`);
+                if (requestCard) {
+                    requestCard.style.opacity = '0';
+                    requestCard.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        requestCard.remove();
+                        // Check if list is empty
+                        const requestsList = requestCard.parentElement;
+                        if (requestsList.children.length === 0) {
+                            location.reload();
+                        }
+                    }, 300);
+                }
+            } else {
+                showToast(data.error || 'An error occurred', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error processing request: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    }
+    
+    function cancelOutgoingRequest(requestId) {
+        if (!confirm('Are you sure you want to cancel this request?')) {
+            return;
+        }
+        
+        const btn = document.querySelector(`.cancel-outgoing-request[data-request-id="${requestId}"]`);
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = 'Cancelling...';
+        
+        fetch(`/request/${requestId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken,
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                // Update the request card
+                const requestCard = document.querySelector(`.request-card[data-request-id="${requestId}"]`);
+                if (requestCard) {
+                    requestCard.classList.add('status-cancelled');
+                    requestCard.querySelector('.request-status').textContent = 'Cancelled';
+                    requestCard.querySelector('.request-status').className = 'request-status status-cancelled';
+                    requestCard.querySelector('.request-footer').innerHTML = '';
+                }
+            } else {
+                showToast(data.error || 'An error occurred', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error cancelling request: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    }
+    
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-message">${message}</span>
+            </div>
+        `;
+        
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#DCFCE7' : '#FEE2E2'};
+            color: ${type === 'success' ? '#166534' : '#991B1B'};
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid ${type === 'success' ? '#BBF7D0' : '#FECACA'};
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            word-wrap: break-word;
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateX(0)';
+        }, 100);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    document.body.removeChild(toast);
+                }
+            }, 300);
+        }, 4000);
+    }
+});
+</script>
+{% endblock %}
+
+{% block feature %} {% endblock %}
+{% block research %} {% endblock %}
+{% block publications %} {% endblock %}
+{% block footer %} {% endblock %}

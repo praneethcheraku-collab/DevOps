@@ -1,0 +1,28 @@
+{% extends 'index.html' %}
+
+{% block nav %}
+
+<header>
+        <div class="container header-container">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="logo-text">Crypto<span>Research</span></div>
+            </div>
+            <nav id="main-nav">
+                <ul>
+                    <li><a href="{% url 'dashboard' %}">Home</a></li>
+                    <li><a href="{% url 'upload_file' %}">Upload files</a></li>
+                    <li><a href="{% url 'user_files' %}">View files</a></li>
+                    <li><a href="{% url 'explore_files' %}">Request Files</a></li>
+                    <li><a href="{% url 'logout_user' %}">Logout</a></li>
+                </ul>
+            </nav>
+            <button class="mobile-menu-btn" id="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+{% endblock %}

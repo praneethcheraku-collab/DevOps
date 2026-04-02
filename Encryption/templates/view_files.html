@@ -1,0 +1,809 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block hero %}
+<div class="file-viewer-container" style="margin-top: 100px;">
+    <div class="viewer-header">
+        <div class="breadcrumb">
+            <a href="{% url 'upload_file' %}" class="breadcrumb-link">Uploads</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">File Viewer</span>
+        </div>
+        
+        <div class="file-title-section">
+            <div class="file-icon {{ file_type }}">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10 9H9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="file-title-info">
+                <h1 class="file-name">{{ file.original_name }}</h1>
+                <div class="file-meta">
+                    <span class="file-size">{{ file.get_file_size_display }}</span>
+                    <span class="file-date">Uploaded {{ file.uploaded_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{{ file.file.url }}" class="btn btn-primary" download>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Download
+            </a>
+            <form method="post" action="{% url 'delete_file' file.id %}" class="delete-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this file?')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="viewer-content">
+        <div class="content-tabs">
+            <button class="tab-btn active" data-tab="preview">File Preview</button>
+            <button class="tab-btn" data-tab="encryption">Encryption Details</button>
+            <button class="tab-btn" data-tab="metadata">File Information</button>
+        </div>
+        
+        <div class="tab-content">
+            <!-- File Preview Tab -->
+            <div class="tab-pane active" id="preview">
+                <div class="preview-container">
+                    {% if file_type == 'image' %}
+                        <div class="image-preview">
+                            <img src="{{ file.file.url }}" alt="{{ file.original_name }}" class="preview-image">
+                        </div>
+                    {% elif file_type == 'pdf' %}
+                        <div class="pdf-preview">
+                            <div class="pdf-placeholder">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 2V8H20" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 13H8" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 17H8" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M10 9H9H8" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <h3>PDF Preview</h3>
+                                <p>PDF files cannot be previewed directly in the browser.</p>
+                                <a href="{{ file.file.url }}" class="btn btn-primary" target="_blank">Open PDF</a>
+                            </div>
+                        </div>
+                    {% elif file_type == 'document' %}
+                        <div class="document-preview">
+                            <div class="document-placeholder">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#0284C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 2V8H20" stroke="#0284C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 13H8" stroke="#0284C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 17H8" stroke="#0284C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M10 9H9H8" stroke="#0284C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <h3>Document Preview</h3>
+                                <p>Document files cannot be previewed directly in the browser.</p>
+                                <a href="{{ file.file.url }}" class="btn btn-primary" target="_blank">Download Document</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="generic-preview">
+                            <div class="generic-placeholder">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 2V8H20" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 13H8" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 17H8" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M10 9H9H8" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <h3>File Preview</h3>
+                                <p>This file type cannot be previewed directly in the browser.</p>
+                                <a href="{{ file.file.url }}" class="btn btn-primary" target="_blank">Download File</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Encryption Details Tab -->
+            <div class="tab-pane" id="encryption">
+                <div class="encryption-details">
+                    <div class="encryption-section">
+                        <h3>Encryption Status</h3>
+                        <div class="status-badge encrypted">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Encrypted
+                        </div>
+                    </div>
+                    
+                    <div class="encryption-section">
+                        <h3>Encrypted Content</h3>
+                        <div class="encrypted-content-display">
+                            <div class="content-header">
+                                <span>Encrypted Tuple</span>
+                                <button class="copy-btn" data-content="{{ file.get_encrypted_content }}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8 16H6C5.46957 16 4.96086 15.7893 4.58579 15.4142C4.21071 15.0391 4 14.5304 4 14V6C4 5.46957 4.21071 4.96086 4.58579 4.58579C4.96086 4.21071 5.46957 4 6 4H14C14.5304 4 15.0391 4.21071 15.4142 4.58579C15.7893 4.96086 16 5.46957 16 6V8M10 20H18C18.5304 20 19.0391 19.7893 19.4142 19.4142C19.7893 19.0391 20 18.5304 20 18V10C20 9.46957 19.7893 8.96086 19.4142 8.58579C19.0391 8.21071 18.5304 8 18 8H10C9.46957 8 8.96086 8.21071 8.58579 8.58579C8.21071 8.96086 8 9.46957 8 10V18C8 18.5304 8.21071 19.0391 8.58579 19.4142C8.96086 19.7893 9.46957 20 10 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="encrypted-tuple">
+                                {{ file.get_encrypted_content }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="keys-grid">
+                        <div class="key-section">
+                            <h3>Public Key</h3>
+                            <div class="key-display">
+                                <div class="key-header">
+                                    <span>Public Key (e, N)</span>
+                                    <button class="copy-btn" data-content="{{ file.public_key }}">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M8 16H6C5.46957 16 4.96086 15.7893 4.58579 15.4142C4.21071 15.0391 4 14.5304 4 14V6C4 5.46957 4.21071 4.96086 4.58579 4.58579C4.96086 4.21071 5.46957 4 6 4H14C14.5304 4 15.0391 4.21071 15.4142 4.58579C15.7893 4.96086 16 5.46957 16 6V8M10 20H18C18.5304 20 19.0391 19.7893 19.4142 19.4142C19.7893 19.0391 20 18.5304 20 18V10C20 9.46957 19.7893 8.96086 19.4142 8.58579C19.0391 8.21071 18.5304 8 18 8H10C9.46957 8 8.96086 8.21071 8.58579 8.58579C8.21071 8.96086 8 9.46957 8 10V18C8 18.5304 8.21071 19.0391 8.58579 19.4142C8.96086 19.7893 9.46957 20 10 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        Copy
+                                    </button>
+                                </div>
+                                <div class="key-value">
+                                    {{ file.public_key }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="key-section">
+                            <h3>Private Key</h3>
+                            <div class="key-display">
+                                <div class="key-header">
+                                    <span>Private Key (d, N)</span>
+                                    <button class="copy-btn" data-content="{{ file.private_key }}">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M8 16H6C5.46957 16 4.96086 15.7893 4.58579 15.4142C4.21071 15.0391 4 14.5304 4 14V6C4 5.46957 4.21071 4.96086 4.58579 4.58579C4.96086 4.21071 5.46957 4 6 4H14C14.5304 4 15.0391 4.21071 15.4142 4.58579C15.7893 4.96086 16 5.46957 16 6V8M10 20H18C18.5304 20 19.0391 19.7893 19.4142 19.4142C19.7893 19.0391 20 18.5304 20 18V10C20 9.46957 19.7893 8.96086 19.4142 8.58579C19.0391 8.21071 18.5304 8 18 8H10C9.46957 8 8.96086 8.21071 8.58579 8.58579C8.21071 8.96086 8 9.46957 8 10V18C8 18.5304 8.21071 19.0391 8.58579 19.4142C8.96086 19.7893 9.46957 20 10 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        Copy
+                                    </button>
+                                </div>
+                                <div class="key-value">
+                                    {{ file.private_key }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File Information Tab -->
+            <div class="tab-pane" id="metadata">
+                <div class="metadata-grid">
+                    <div class="metadata-item">
+                        <span class="metadata-label">File Name</span>
+                        <span class="metadata-value">{{ file.original_name }}</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">File Size</span>
+                        <span class="metadata-value">{{ file.get_file_size_display }}</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Upload Date</span>
+                        <span class="metadata-value">{{ file.uploaded_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">File Type</span>
+                        <span class="metadata-value">{{ file_type|title }}</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Uploaded By</span>
+                        <span class="metadata-value">{{ file.user.username }}</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">File ID</span>
+                        <span class="metadata-value">{{ file.id }}</span>
+                    </div>
+                </div>
+                
+                <div class="file-actions-section">
+                    <h3>File Actions</h3>
+                    <div class="action-buttons-grid">
+                        <a href="{{ file.file.url }}" class="action-card" download>
+                            <div class="action-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="action-info">
+                                <h4>Download</h4>
+                                <p>Download the original file</p>
+                            </div>
+                        </a>
+                        
+                        <button class="action-card" id="decryptBtn">
+                            <div class="action-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="action-info">
+                                <h4>Decrypt</h4>
+                                <p>Decrypt file content</p>
+                            </div>
+                        </button>
+                        
+                        <a href="{% url 'upload_file' %}" class="action-card">
+                            <div class="action-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M10 9H9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="action-info">
+                                <h4>Upload New</h4>
+                                <p>Upload another file</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.file-viewer-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.viewer-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.breadcrumb-link {
+    color: #4A6CF7;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+    color: #3A5BD9;
+}
+
+.breadcrumb-separator {
+    margin: 0 8px;
+    color: #A0AEC0;
+}
+
+.breadcrumb-current {
+    color: #718096;
+}
+
+.file-title-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.file-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.file-icon.image {
+    background: #DCFCE7;
+    color: #16A34A;
+}
+
+.file-icon.pdf {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.file-icon.document {
+    background: #E0F2FE;
+    color: #0284C7;
+}
+
+.file-icon.other {
+    background: #F3E8FF;
+    color: #9333EA;
+}
+
+.file-title-info {
+    flex-grow: 1;
+}
+
+.file-name {
+    color: #2D3748;
+    font-size: 24px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.file-meta {
+    display: flex;
+    font-size: 14px;
+    color: #718096;
+}
+
+.file-size {
+    margin-right: 16px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: none;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #4A6CF7;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #3A5BD9;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: #DC2626;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #B91C1C;
+    transform: translateY(-1px);
+}
+
+.viewer-content {
+    margin-top: 20px;
+}
+
+.content-tabs {
+    display: flex;
+    border-bottom: 1px solid #E2E8F0;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    font-weight: 500;
+    color: #718096;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+    color: #4A6CF7;
+}
+
+.tab-btn.active {
+    color: #4A6CF7;
+    border-bottom-color: #4A6CF7;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.preview-container {
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.image-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+}
+
+.pdf-preview, .document-preview, .generic-preview {
+    width: 100%;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.pdf-placeholder, .document-placeholder, .generic-placeholder {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.encryption-details {
+    padding: 20px 0;
+}
+
+.encryption-section {
+    margin-bottom: 30px;
+}
+
+.encryption-section h3 {
+    color: #2D3748;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-badge.encrypted {
+    background: #DCFCE7;
+    color: #16A34A;
+}
+
+.encrypted-content-display {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #F7FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    font-weight: 500;
+    color: #2D3748;
+}
+
+.copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: #4A6CF7;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.copy-btn:hover {
+    background: #EDF2FF;
+}
+
+.encrypted-tuple {
+    padding: 16px;
+    background: #F7FAFC;
+    font-family: monospace;
+    word-break: break-all;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.keys-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.key-section h3 {
+    color: #2D3748;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.key-display {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.key-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #F7FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 14px;
+    color: #2D3748;
+}
+
+.key-value {
+    padding: 16px;
+    background: white;
+    font-family: monospace;
+    word-break: break-all;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.metadata-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.metadata-item {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: #F7FAFC;
+    border-radius: 8px;
+}
+
+.metadata-label {
+    font-size: 14px;
+    color: #718096;
+    margin-bottom: 4px;
+}
+
+.metadata-value {
+    font-weight: 500;
+    color: #2D3748;
+}
+
+.file-actions-section h3 {
+    color: #2D3748;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.action-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: #F7FAFC;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    text-align: center;
+}
+
+.action-card:hover {
+    background: #EDF2F7;
+    border-color: #4A6CF7;
+    transform: translateY(-2px);
+    color: inherit;
+}
+
+.action-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    color: #4A6CF7;
+}
+
+.action-info h4 {
+    color: #2D3748;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.action-info p {
+    font-size: 14px;
+    color: #718096;
+}
+
+@media (max-width: 768px) {
+    .file-viewer-container {
+        padding: 20px;
+    }
+    
+    .file-title-section {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .file-icon {
+        margin-bottom: 12px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+    
+    .keys-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metadata-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+            
+            // Update active tab button
+            tabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show target tab pane
+            tabPanes.forEach(pane => {
+                pane.classList.remove('active');
+                if (pane.id === targetTab) {
+                    pane.classList.add('active');
+                }
+            });
+        });
+    });
+    
+    // Copy button functionality
+    const copyBtns = document.querySelectorAll('.copy-btn');
+    
+    copyBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const content = this.dataset.content;
+            
+            // Create a temporary textarea to copy from
+            const textarea = document.createElement('textarea');
+            textarea.value = content;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            // Show feedback
+            const originalText = this.innerHTML;
+            this.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Copied!
+            `;
+            
+            setTimeout(() => {
+                this.innerHTML = originalText;
+            }, 2000);
+        });
+    });
+    
+    // Decrypt button functionality
+    const decryptBtn = document.getElementById('decryptBtn');
+    
+    if (decryptBtn) {
+        decryptBtn.addEventListener('click', function() {
+            // This would typically make an API call to decrypt the file
+            alert('Decryption functionality would be implemented here. This would use the private key to decrypt the file content.');
+        });
+    }
+    
+    // Determine file type for styling
+    function getFileType(filename) {
+        const extension = filename.split('.').pop().toLowerCase();
+        const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
+        const documentTypes = ['doc', 'docx', 'txt', 'rtf'];
+        const pdfTypes = ['pdf'];
+        const spreadsheetTypes = ['xls', 'xlsx', 'csv'];
+        const presentationTypes = ['ppt', 'pptx'];
+        
+        if (imageTypes.includes(extension)) return 'image';
+        if (pdfTypes.includes(extension)) return 'pdf';
+        if (documentTypes.includes(extension)) return 'document';
+        if (spreadsheetTypes.includes(extension)) return 'spreadsheet';
+        if (presentationTypes.includes(extension)) return 'presentation';
+        return 'other';
+    }
+});
+</script>
+{% endblock %}
+
+{% block feature %} {% endblock %}
+{% block research %} {% endblock %}
+{% block publications %} {% endblock %}
+{% block footer %} {% endblock %}
